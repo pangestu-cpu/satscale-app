@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SatScales - Login System</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#0e3a5d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SatScales">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1625/1625624.png">
+    
+    <!-- Link Manifest Dinamis -->
+    <link rel="manifest" id="pwa-manifest">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background-color: #f1f5f9;
+            color: #0f172a;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .tab-content { animation: fadeIn 0.3s ease-in-out; }
+        .hidden { display: none !important; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .print-only { display: none; }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background-color: white; padding: 0; }
+            table { border: 1px solid #e2e8f0; width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #e2e8f0; padding: 10px !important; font-size: 9pt; }
+        }
+
+        .status-light-active {
+            animation: pulse-green 1.5s infinite;
+        }
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+
+        .login-bg {
+            background: linear-gradient(135deg, #0e3a5d 0%, #1e293b 100%);
+        }
+
+        .custom-checkbox {
+            width: 1.2rem;
+            height: 1.2rem;
+            accent-color: #0e3a5d;
+            cursor: pointer;
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 flex flex-col min-h-screen">
+
+    <!-- LOGIN OVERLAY -->
+    <div id="login-screen" class="fixed inset-0 z-[100] login-bg flex items-center justify-center p-4">
+        <div class="bg-white/10 backdrop-blur-xl border border-white/20 p-8 md:p-12 rounded-[3rem] w-full max-w-md shadow-2xl text-center">
+            <div class="flex flex-col items-center gap-4 mb-8">
+                <div class="bg-white p-4 rounded-3xl text-[#0e3a5d] shadow-lg">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/></svg>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-black tracking-tighter text-white leading-none uppercase">
+                        SAT<span class="text-blue-400">SCALES</span>
+                    </h1>
+                    <p class="text-[10px] font-black uppercase tracking-[0.4em] text-blue-200/60 mt-2">Unlimited Access</p>
+                </div>
+            </div>
+
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div class="space-y-1 text-left">
+                    <label class="text-[10px] font-black text-blue-200 uppercase tracking-widest ml-4">Username</label>
+                    <input type="text" id="login-user" placeholder="Masukkan Username" class="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold outline-none focus:border-blue-400 transition-colors placeholder:text-white/20" required>
+                </div>
+                <div class="space-y-1 text-left">
+                    <label class="text-[10px] font-black text-blue-200 uppercase tracking-widest ml-4">Password</label>
+                    <input type="password" id="login-pass" placeholder="••••••••" class="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold outline-none focus:border-blue-400 transition-colors placeholder:text-white/20" required>
+                </div>
+                <div id="login-error" class="hidden text-rose-400 text-xs font-bold bg-rose-400/10 py-2 rounded-lg">
+                    Username atau Password salah!
+                </div>
+                <button type="submit" class="w-full bg-white text-[#0e3a5d] font-black py-4 rounded-2xl text-lg shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all uppercase mt-4">
+                    Masuk Sekarang
+                </button>
+            </form>
+            
+            <p class="mt-8 text-[10px] text-white/30 font-bold uppercase tracking-widest">Enterprise Offline System v2.0</p>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTENT -->
+    <div id="main-app" class="hidden flex-grow flex flex-col">
+        <div class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+            <header class="bg-white rounded-[2rem] border border-slate-200 shadow-sm p-4 mb-8 flex flex-col lg:flex-row items-center justify-between gap-6 no-print">
+                <div class="flex items-center gap-4">
+                    <div class="bg-[#0e3a5d] p-3 rounded-2xl text-white">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/></svg>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-black tracking-tighter text-[#0e3a5d] leading-none uppercase">
+                            SAT<span class="text-slate-900">SCALES</span>
+                        </h1>
+                        <p class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mt-1">Sistem Offline Lokal</p>
+                    </div>
+                </div>
+
+                <nav class="flex flex-wrap justify-center items-center bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+                    <button onclick="showTab('dashboard')" id="btn-dashboard" class="nav-btn flex items-center gap-3 px-5 py-2.5 rounded-xl font-bold transition-all bg-[#0e3a5d] text-white">
+                        Dashboard
+                    </button>
+                    <button onclick="startStage1()" id="btn-weighing" class="nav-btn flex items-center gap-3 px-5 py-2.5 rounded-xl font-bold transition-all text-slate-500 hover:bg-slate-100">
+                        Timbang
+                    </button>
+                    <button onclick="showTab('history')" id="btn-history" class="nav-btn flex items-center gap-3 px-5 py-2.5 rounded-xl font-bold transition-all text-slate-500 hover:bg-slate-100">
+                        Riwayat
+                    </button>
+                    <button onclick="showTab('master')" id="btn-master" class="nav-btn flex items-center gap-3 px-5 py-2.5 rounded-xl font-bold transition-all text-slate-500 hover:bg-slate-100">
+                        Master
+                    </button>
+                </nav>
+
+                <div class="flex items-center gap-3">
+                    <button onclick="logout()" class="p-2.5 bg-slate-100 text-slate-400 hover:text-rose-500 rounded-xl transition-colors" title="Logout">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    </button>
+                    <select id="indicator-select" class="bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none">
+                        <option value="SGW 3015S">SGW 3015S</option>
+                        <option value="Sonic NI-7">Sonic NI-7</option>
+                        <option value="AVERY E1205">AVERY E1205</option>
+                        <option value="Sonic XK3190-A9+P">Sonic XK3190-A9+P</option>
+                    </select>
+                    <button id="connect-btn" onclick="toggleConnect()" class="px-4 py-2 bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold hover:bg-slate-200 transition-all flex items-center gap-3">
+                        <span id="status-indicator" class="w-3 h-3 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]"></span>
+                        <span id="connect-text">Connect</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- DASHBOARD TAB -->
+            <div id="tab-dashboard" class="tab-content space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex items-center gap-4">
+                        <div class="p-4 rounded-2xl bg-blue-50 text-blue-600">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Netto</p>
+                            <p id="stat-netto" class="text-2xl font-black text-blue-600">0 kg</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex items-center gap-4">
+                        <div class="p-4 rounded-2xl bg-emerald-50 text-emerald-600">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Transaksi</p>
+                            <p id="stat-count" class="text-2xl font-black text-emerald-600">0</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex items-center gap-4">
+                        <div class="p-4 rounded-2xl bg-purple-50 text-purple-600">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Selesai</p>
+                            <p id="stat-completed" class="text-2xl font-black text-purple-600">0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WEIGHING TAB -->
+            <div id="tab-weighing" class="tab-content hidden max-w-2xl mx-auto">
+                <div id="form-container" class="bg-white p-8 rounded-[3rem] border border-slate-200 shadow-xl">
+                    <div class="text-center mb-8">
+                        <h2 id="weighing-title" class="text-2xl font-black text-slate-800 uppercase">Input Penimbangan</h2>
+                        <p id="weighing-subtitle" class="text-slate-400 text-sm italic">Simpan data Berat Gross (Tahap 1)</p>
+                    </div>
+                    
+                    <div id="stage2-info" class="hidden mb-6 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center gap-4">
+                        <div class="bg-emerald-500 text-white p-2 rounded-lg">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18H3c-1.1 0-2-.9-2-2V7c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2v11"/><path d="M14 9h4l4 4v5c0 1.1-.9 2-2 2h-2"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-emerald-600 uppercase">Memproses Tahap 2</p>
+                            <p id="stage2-target" class="text-sm font-bold text-slate-700">-</p>
+                        </div>
+                        <button type="button" onclick="startStage1()" class="ml-auto text-xs font-bold text-rose-500 hover:underline">Batal</button>
+                    </div>
+
+                    <form id="main-weigh-form" onsubmit="handleFormSubmit(event)" class="space-y-6">
+                        <div id="input-fields-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Suplier</label>
+                                <select id="input-supplier" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none">
+                                    <option value="">Pilih Suplier...</option>
+                                </select>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Bahan</label>
+                                <select id="input-category" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none">
+                                    <option value="">Pilih Bahan...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="plat-field-container" class="space-y-2">
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Plat Nomor</label>
+                            <input type="text" id="input-plat" placeholder="B 1234 XYZ" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold uppercase outline-none">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex justify-between">
+                                <span id="label-weight-type">Berat Timbang (Gross)</span> 
+                                <span id="live-indicator" class="hidden text-emerald-500 font-bold">LIVE</span>
+                            </label>
+                            <div class="relative">
+                                <input type="number" step="1" id="input-weight" placeholder="0" class="w-full pl-6 pr-16 py-8 bg-slate-50 border border-slate-200 rounded-[2rem] outline-none font-mono font-black text-5xl text-right text-slate-700" required>
+                                <span class="absolute right-6 top-1/2 -translate-y-1/2 font-black text-slate-400 text-xl italic">KG</span>
+                            </div>
+                        </div>
+                        <button type="submit" id="submit-btn" class="w-full bg-[#0e3a5d] text-white font-black py-5 rounded-2xl text-lg shadow-xl active:scale-[0.98] transition-transform">
+                            <span id="submit-btn-text">SIMPAN TAHAP 1</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- HISTORY TAB -->
+            <div id="tab-history" class="tab-content hidden space-y-6">
+                <!-- Filter Section -->
+                <div class="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4 no-print">
+                    <div class="relative w-full md:w-96">
+                        <input type="text" id="history-search" oninput="resetPageAndRender()" placeholder="Cari Plat Nomor atau Suplier..." class="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl font-bold outline-none focus:border-blue-400 transition-colors">
+                        <div class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 w-full md:w-auto">
+                        <button onclick="exportSelected()" class="flex-1 md:flex-none bg-emerald-500 text-white px-6 py-3 rounded-2xl text-sm font-black uppercase shadow-lg shadow-emerald-500/10 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Ekspor Terpilih
+                        </button>
+                        <button onclick="window.print()" class="flex-1 md:flex-none bg-[#0e3a5d] text-white px-6 py-3 rounded-2xl text-sm font-black uppercase shadow-lg shadow-blue-900/10 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                            Cetak
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[800px]">
+                            <thead>
+                                <tr class="text-[10px] font-black text-slate-400 uppercase bg-slate-50">
+                                    <th class="px-6 py-5 text-center no-print">
+                                        <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)" class="custom-checkbox">
+                                    </th>
+                                    <th class="px-8 py-5">Plat / Waktu</th>
+                                    <th class="px-8 py-5">Suplier / Bahan</th>
+                                    <th class="px-8 py-5 text-right">Gross</th>
+                                    <th class="px-8 py-5 text-right">Tare</th>
+                                    <th class="px-8 py-5 text-right font-black text-slate-900">Netto</th>
+                                    <th class="px-8 py-5 text-center no-print">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body" class="divide-y divide-slate-50 text-sm font-bold text-slate-600">
+                                <!-- Data injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Pagination Controls -->
+                <div id="pagination-container" class="flex items-center justify-between px-6 py-4 bg-white rounded-2xl border border-slate-200 no-print">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                        Halaman <span id="current-page-num" class="text-[#0e3a5d]">1</span> dari <span id="total-pages-num">1</span>
+                    </p>
+                    <div class="flex items-center gap-2">
+                        <button onclick="changePage(-1)" id="prev-btn" class="pagination-btn px-4 py-2 bg-slate-50 text-[#0e3a5d] border border-slate-200 rounded-xl text-xs font-black uppercase hover:bg-slate-100 transition-all">
+                            Sebelumnya
+                        </button>
+                        <button onclick="changePage(1)" id="next-btn" class="pagination-btn px-4 py-2 bg-slate-50 text-[#0e3a5d] border border-slate-200 rounded-xl text-xs font-black uppercase hover:bg-slate-100 transition-all">
+                            Selanjutnya
+                        </button>
+                    </div>
+                </div>
+
+                <div id="no-data-msg" class="hidden py-20 text-center">
+                    <div class="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    </div>
+                    <p class="font-black text-slate-400 uppercase text-xs tracking-widest">Data tidak ditemukan</p>
+                </div>
+            </div>
+
+            <!-- MASTER DATA TAB -->
+            <div id="tab-master" class="tab-content hidden grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+                    <h3 class="text-xl font-black text-[#0e3a5d] mb-6 uppercase tracking-tighter">Master Suplier</h3>
+                    <div class="flex gap-2 mb-6">
+                        <input type="text" id="new-supplier" placeholder="Nama Suplier..." class="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none font-bold">
+                        <button onclick="addMasterData('supplier')" class="bg-[#0e3a5d] text-white px-5 rounded-xl font-black">+</button>
+                    </div>
+                    <div id="master-supplier-list" class="space-y-2 max-h-60 overflow-y-auto"></div>
+                </div>
+
+                <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+                    <h3 class="text-xl font-black text-[#0e3a5d] mb-6 uppercase tracking-tighter">Master Bahan</h3>
+                    <div class="flex gap-2 mb-6">
+                        <input type="text" id="new-category" placeholder="Jenis Bahan..." class="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none font-bold">
+                        <button onclick="addMasterData('category')" class="bg-[#0e3a5d] text-white px-5 rounded-xl font-black">+</button>
+                    </div>
+                    <div id="master-category-list" class="space-y-2 max-h-60 overflow-y-auto"></div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="w-full py-12 mt-auto border-t border-slate-200 bg-white no-print">
+            <div class="max-w-7xl mx-auto px-4 text-center space-y-6">
+                <div class="flex justify-center items-center gap-4">
+                    <div class="h-[1px] w-16 bg-slate-200"></div>
+                    <p class="text-[11px] font-black text-[#0e3a5d] uppercase tracking-[0.4em]">&copy; SATSCALES-unlimited</p>
+                    <div class="h-[1px] w-16 bg-slate-200"></div>
+                </div>
+                
+                <div class="inline-flex flex-col items-center px-8 py-5 bg-slate-50 border border-slate-100 rounded-[2rem] shadow-sm">
+                    <p class="text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">To Upgrade contact</p>
+                    <a href="https://wa.me/6285334984949" target="_blank" class="text-xl font-black text-[#0e3a5d] hover:text-blue-600 transition-colors flex items-center gap-2">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        +62853-3498-4949
+                    </a>
+                </div>
+                
+                <p class="text-[10px] font-bold text-slate-300 italic uppercase tracking-[0.2em]">Enterprise Grade Local Management System</p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        /** * PWA CONFIGURATION & GENERATION
+         */
+        const pwaManifest = {
+            "name": "SatScales Enterprise Offline",
+            "short_name": "SatScales",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#0e3a5d",
+            "theme_color": "#0e3a5d",
+            "description": "Sistem Timbangan Offline Lokal Enterprise",
+            "icons": [
+                {
+                    "src": "https://cdn-icons-png.flaticon.com/512/1625/1625624.png",
+                    "sizes": "512x512",
+                    "type": "image/png",
+                    "purpose": "any maskable"
+                }
+            ]
+        };
+
+        const manifestBlob = new Blob([JSON.stringify(pwaManifest)], {type: 'application/json'});
+        document.getElementById('pwa-manifest').setAttribute('href', URL.createObjectURL(manifestBlob));
+
+        // PWA Service Worker Registration (Safe attempt)
+        if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+            window.addEventListener('load', () => {
+                // Dalam lingkungan real hosting, arahkan ke file sw.js
+                // navigator.serviceWorker.register('/sw.js').catch(err => console.log(err));
+            });
+        }
+
+        // Handle PWA Install Prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // Di sini Anda bisa memicu UI kustom jika diinginkan, tapi permintaan user adalah tidak merubah tampilan.
+            // Browser biasanya akan menangani tombol install otomatis di address bar.
+        });
+
+        /**
+         * CORE APP LOGIC
+         */
+        let items = JSON.parse(localStorage.getItem('scale_data')) || [];
+        let suppliers = JSON.parse(localStorage.getItem('master_suppliers')) || ['Umum', 'Internal'];
+        let categories = JSON.parse(localStorage.getItem('master_categories')) || ['Logam', 'Kertas', 'Plastik'];
+        let currentMode = 1; 
+        let activeProcessId = null;
+        let isConnected = false;
+        let port = null;
+        let reader = null;
+
+        // Pagination State
+        let currentPage = 1;
+        const rowsPerPage = 5;
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById('login-user').value;
+            const pass = document.getElementById('login-pass').value;
+            const errorDiv = document.getElementById('login-error');
+
+            if (user === 'super' && pass === 'ss') {
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('main-app').classList.remove('hidden');
+                errorDiv.classList.add('hidden');
+                showTab('dashboard');
+            } else {
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        function logout() {
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('main-app').classList.add('hidden');
+            document.getElementById('login-user').value = '';
+            document.getElementById('login-pass').value = '';
+        }
+
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            const targetTab = document.getElementById('tab-' + tabId);
+            if(targetTab) targetTab.classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-[#0e3a5d]', 'text-white');
+                btn.classList.add('text-slate-500', 'hover:bg-slate-100');
+            });
+            const activeBtn = document.getElementById('btn-' + (tabId === 'weighing' ? 'weighing' : tabId));
+            if(activeBtn) {
+                activeBtn.classList.add('bg-[#0e3a5d]', 'text-white');
+                activeBtn.classList.remove('text-slate-500', 'hover:bg-slate-100');
+            }
+            
+            if(tabId === 'history') {
+                currentPage = 1;
+                renderHistory();
+            }
+            if(tabId === 'dashboard') updateStats();
+            if(tabId === 'master') renderMasterLists();
+            if(tabId === 'weighing') populateSelects();
+        }
+
+        function startStage1() {
+            currentMode = 1; 
+            activeProcessId = null;
+            document.getElementById('weighing-title').innerText = "Input Penimbangan";
+            document.getElementById('weighing-subtitle').innerText = "Simpan data Berat Gross (Tahap 1)";
+            document.getElementById('label-weight-type').innerText = "Berat Timbang (Gross)";
+            document.getElementById('submit-btn-text').innerText = "SIMPAN TAHAP 1";
+            document.getElementById('submit-btn').style.backgroundColor = '#0e3a5d';
+            
+            document.getElementById('input-fields-container').classList.remove('hidden');
+            document.getElementById('plat-field-container').classList.remove('hidden');
+            document.getElementById('stage2-info').classList.add('hidden');
+            
+            document.getElementById('input-supplier').setAttribute('required', '');
+            document.getElementById('input-category').setAttribute('required', '');
+            document.getElementById('input-plat').setAttribute('required', '');
+            
+            showTab('weighing');
+            document.getElementById('main-weigh-form').reset();
+        }
+
+        function startStage2(id) {
+            const item = items.find(i => i.id === id);
+            if(!item) return;
+            currentMode = 2; 
+            activeProcessId = id;
+            document.getElementById('weighing-title').innerText = "PENIMBANGAN TAHAP 2";
+            document.getElementById('weighing-subtitle').innerText = "Ambil Berat Kosong (Tare)";
+            document.getElementById('label-weight-type').innerText = "Berat Timbang (Tare)";
+            document.getElementById('submit-btn-text').innerText = "SELESAIKAN PENIMBANGAN";
+            document.getElementById('submit-btn').style.backgroundColor = '#10b981';
+            
+            document.getElementById('input-fields-container').classList.add('hidden');
+            document.getElementById('plat-field-container').classList.add('hidden');
+            document.getElementById('stage2-info').classList.remove('hidden');
+            document.getElementById('stage2-target').innerText = `${item.plat} - ${item.supplier}`;
+            
+            document.getElementById('input-supplier').removeAttribute('required');
+            document.getElementById('input-category').removeAttribute('required');
+            document.getElementById('input-plat').removeAttribute('required');
+            
+            showTab('weighing');
+            document.getElementById('input-weight').value = '';
+            document.getElementById('input-weight').focus();
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const weightValue = Math.round(parseFloat(document.getElementById('input-weight').value) || 0);
+
+            if (currentMode === 1) {
+                const newItem = {
+                    id: Date.now(),
+                    supplier: document.getElementById('input-supplier').value,
+                    category: document.getElementById('input-category').value,
+                    plat: document.getElementById('input-plat').value.toUpperCase(),
+                    gross: weightValue, 
+                    tare: 0, 
+                    netto: 0, 
+                    isCompleted: false, 
+                    date: new Date().toISOString()
+                };
+                items.unshift(newItem);
+            } else if (currentMode === 2 && activeProcessId) {
+                items = items.map(item => {
+                    if (item.id === activeProcessId) {
+                        const nettoValue = Math.abs(item.gross - weightValue);
+                        return { ...item, tare: weightValue, netto: nettoValue, isCompleted: true };
+                    }
+                    return item;
+                });
+            }
+            
+            localStorage.setItem('scale_data', JSON.stringify(items));
+            startStage1(); 
+            currentPage = 1;
+            updateStats();
+        }
+
+        function resetPageAndRender() {
+            currentPage = 1;
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const body = document.getElementById('history-table-body');
+            const searchVal = document.getElementById('history-search').value.toLowerCase();
+            const noDataMsg = document.getElementById('no-data-msg');
+            const pagContainer = document.getElementById('pagination-container');
+            
+            // Filter Data
+            const filtered = items.filter(item => 
+                item.plat.toLowerCase().includes(searchVal) || 
+                item.supplier.toLowerCase().includes(searchVal) ||
+                item.category.toLowerCase().includes(searchVal)
+            );
+
+            if (filtered.length === 0) {
+                body.innerHTML = '';
+                noDataMsg.classList.remove('hidden');
+                pagContainer.classList.add('hidden');
+                return;
+            }
+
+            noDataMsg.classList.add('hidden');
+            pagContainer.classList.remove('hidden');
+
+            // Calculate Pagination
+            const totalPages = Math.ceil(filtered.length / rowsPerPage);
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+            const paginatedItems = filtered.slice(startIndex, endIndex);
+
+            // Update Pagination UI
+            document.getElementById('current-page-num').innerText = currentPage;
+            document.getElementById('total-pages-num').innerText = totalPages;
+            document.getElementById('prev-btn').disabled = currentPage === 1;
+            document.getElementById('next-btn').disabled = currentPage === totalPages;
+
+            body.innerHTML = paginatedItems.map(item => `
+                <tr class="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                    <td class="px-6 py-5 text-center no-print">
+                        <input type="checkbox" class="row-checkbox custom-checkbox" data-id="${item.id}">
+                    </td>
+                    <td class="px-8 py-5">
+                        <div class="flex flex-col font-bold">
+                            <span class="text-[#0e3a5d] text-base">${item.plat}</span>
+                            <span class="text-[10px] text-slate-400 font-normal uppercase">${new Date(item.date).toLocaleString('id-ID')}</span>
+                        </div>
+                    </td>
+                    <td class="px-8 py-5">
+                        <div class="flex flex-col">
+                            <span class="font-bold">${item.supplier}</span>
+                            <span class="text-[10px] uppercase text-slate-400 font-black tracking-widest">${item.category}</span>
+                        </div>
+                    </td>
+                    <td class="px-8 py-5 text-right font-mono text-base">${item.gross}</td>
+                    <td class="px-8 py-5 text-right font-mono text-slate-400 text-base">${item.isCompleted ? item.tare : '-'}</td>
+                    <td class="px-8 py-5 text-right font-mono font-black text-lg ${item.isCompleted ? 'text-[#0e3a5d]' : 'text-slate-300 italic text-xs'}">
+                        ${item.isCompleted ? item.netto : 'Pending'}
+                    </td>
+                    <td class="px-8 py-5 text-center no-print">
+                        ${!item.isCompleted ? `
+                            <button onclick="startStage2(${item.id})" class="bg-emerald-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase shadow-lg shadow-emerald-500/20">Ambil Tare</button>
+                        ` : `
+                            <button onclick="deleteItem(${item.id})" class="text-rose-400 hover:text-rose-600 font-bold transition-colors">Hapus</button>
+                        `}
+                    </td>
+                </tr>
+            `).join('');
+            
+            document.getElementById('select-all').checked = false;
+        }
+
+        function changePage(direction) {
+            currentPage += direction;
+            renderHistory();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleSelectAll(masterSource) {
+            const checkboxes = document.querySelectorAll('.row-checkbox');
+            checkboxes.forEach(cb => cb.checked = masterSource.checked);
+        }
+
+        function exportSelected() {
+            const selectedIds = Array.from(document.querySelectorAll('.row-checkbox:checked'))
+                                    .map(cb => parseInt(cb.getAttribute('data-id')));
+            
+            if (selectedIds.length === 0) {
+                alert("Pilih setidaknya satu data untuk diekspor.");
+                return;
+            }
+
+            const dataToExport = items.filter(item => selectedIds.includes(item.id));
+            
+            const headers = ["Waktu", "Plat Nomor", "Suplier", "Bahan", "Gross (kg)", "Tare (kg)", "Netto (kg)", "Status"];
+            const csvRows = [headers.join(",")];
+            
+            dataToExport.forEach(item => {
+                const row = [
+                    `"${new Date(item.date).toLocaleString('id-ID')}"`,
+                    `"${item.plat}"`,
+                    `"${item.supplier}"`,
+                    `"${item.category}"`,
+                    item.gross,
+                    item.isCompleted ? item.tare : 0,
+                    item.isCompleted ? item.netto : 0,
+                    `"${item.isCompleted ? 'Selesai' : 'Pending'}"`
+                ];
+                csvRows.push(row.join(","));
+            });
+
+            const csvString = csvRows.join("\n");
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            
+            link.setAttribute("href", url);
+            link.setAttribute("download", `SatScales_Export_${new Date().getTime()}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function updateStats() {
+            const totalNetto = items.reduce((acc, curr) => acc + (curr.netto || 0), 0);
+            document.getElementById('stat-netto').innerText = totalNetto.toLocaleString('id-ID') + ' kg';
+            document.getElementById('stat-count').innerText = items.length;
+            document.getElementById('stat-completed').innerText = items.filter(i => i.isCompleted).length;
+        }
+
+        function renderMasterLists() {
+            const sList = document.getElementById('master-supplier-list');
+            const cList = document.getElementById('master-category-list');
+            sList.innerHTML = suppliers.map(s => `<div class="flex justify-between items-center p-4 bg-slate-50 border border-slate-100 rounded-2xl mb-2 font-bold">${s} <button onclick="removeMasterData('supplier', '${s}')" class="text-rose-400 hover:text-rose-600 p-2">×</button></div>`).join('');
+            cList.innerHTML = categories.map(c => `<div class="flex justify-between items-center p-4 bg-slate-50 border border-slate-100 rounded-2xl mb-2 font-bold">${c} <button onclick="removeMasterData('category', '${c}')" class="text-rose-400 hover:text-rose-600 p-2">×</button></div>`).join('');
+        }
+
+        function addMasterData(type) {
+            const input = document.getElementById('new-' + type);
+            const val = input.value.trim();
+            if(!val) return;
+            if(type === 'supplier') suppliers.push(val);
+            else categories.push(val);
+            localStorage.setItem('master_suppliers', JSON.stringify(suppliers));
+            localStorage.setItem('master_categories', JSON.stringify(categories));
+            input.value = ''; renderMasterLists();
+        }
+
+        function removeMasterData(type, val) {
+            if(type === 'supplier') suppliers = suppliers.filter(s => s !== val);
+            else categories = categories.filter(c => c !== val);
+            localStorage.setItem('master_suppliers', JSON.stringify(suppliers));
+            localStorage.setItem('master_categories', JSON.stringify(categories));
+            renderMasterLists();
+        }
+
+        function populateSelects() {
+            const sSelect = document.getElementById('input-supplier');
+            const cSelect = document.getElementById('input-category');
+            if(sSelect) sSelect.innerHTML = '<option value="">Pilih Suplier...</option>' + suppliers.map(s => `<option value="${s}">${s}</option>`).join('');
+            if(cSelect) cSelect.innerHTML = '<option value="">Pilih Bahan...</option>' + categories.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+
+        function deleteItem(id) {
+            if(confirm("Hapus data ini dari database lokal?")) {
+                items = items.filter(i => i.id !== id);
+                localStorage.setItem('scale_data', JSON.stringify(items));
+                renderHistory(); updateStats();
+            }
+        }
+
+        async function toggleConnect() {
+            const indicator = document.getElementById('status-indicator');
+            const text = document.getElementById('connect-text');
+
+            if (!isConnected) {
+                try {
+                    port = await navigator.serial.requestPort();
+                    await port.open({ baudRate: 9600 });
+                    isConnected = true;
+                    text.innerText = "Disconnect";
+                    indicator.classList.remove('bg-rose-500');
+                    indicator.classList.add('bg-emerald-500', 'status-light-active');
+                    document.getElementById('live-indicator').classList.remove('hidden');
+                    readData();
+                } catch (err) { console.log("Serial port error"); }
+            } else {
+                isConnected = false;
+                text.innerText = "Connect";
+                indicator.classList.remove('bg-emerald-500', 'status-light-active');
+                indicator.classList.add('bg-rose-500');
+                document.getElementById('live-indicator').classList.add('hidden');
+            }
+        }
+
+        async function readData() {
+            const textDecoder = new TextDecoderStream();
+            port.readable.pipeTo(textDecoder.writable);
+            reader = textDecoder.readable.getReader();
+            let buffer = "";
+            try {
+                while (isConnected) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    if (value) {
+                        buffer += value;
+                        if (buffer.includes('\n')) {
+                            const match = buffer.match(/\d+(\.\d+)?/);
+                            if (match) document.getElementById('input-weight').value = Math.round(parseFloat(match[0]));
+                            buffer = "";
+                        }
+                    }
+                }
+            } catch (err) {}
+        }
+
+        window.onload = () => {
+            populateSelects();
+            renderHistory();
+            updateStats();
+        };
+    </script>
+</body>
+</html>
